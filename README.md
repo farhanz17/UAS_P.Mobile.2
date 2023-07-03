@@ -18,7 +18,7 @@ buka aplikasi `Visual Studio Code`  , kemudian buat project baru dengan mengklik
 
 - Lalu, pada direktori lib > main.dart hapus semua kode, kemudian ubah dengan kode ini:
 
-```dart
+```
     import 'dart:convert';
     import 'package:flutter/material.dart';
     import 'package:http/http.dart' as http;
