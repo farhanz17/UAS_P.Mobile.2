@@ -13,7 +13,7 @@
 A new Flutter project.
 
 # Tutorial
-buka aplikasi 'Visual Studio Code' , kemudian buat project baru dengan mengklik 'Ctrl + Shift + P'
+buka aplikasi 'Visual Studio Code' , kemudian buat project baru dengan mengklik `Ctrl + Shift + P`  
 ```
 
 - Lalu, pada direktori lib > main.dart hapus semua kode, kemudian ubah dengan kode ini:
