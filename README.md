@@ -19,121 +19,151 @@ buka aplikasi 'Visual Studio Code' , kemudian buat project baru dengan mengklik 
 - Lalu, pada direktori lib > main.dart hapus semua kode, kemudian ubah dengan kode ini:
 
 ```dart
-
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
-import 'package:google_fonts/google_fonts.dart';
 
-class HeroData {
-  final String name;
-  final String birthYear;
-  final String deathYear;
-  final String description;
-
-  HeroData(
-      {required this.name,
-      required this.birthYear,
-      required this.deathYear,
-      required this.description});
-
-  factory HeroData.fromJson(Map<String, dynamic> json) {
-    return HeroData(
-      name: json['name'],
-      birthYear: json['birth_year'].toString(),
-      deathYear: json['death_year'].toString(),
-      description: json['description'],
-    );
-  }
+void main() {
+  runApp(NewsApp());
 }
 
-class HeroListScreen extends StatefulWidget {
+class NewsApp extends StatefulWidget {
   @override
-  _HeroListScreenState createState() => _HeroListScreenState();
+  _NewsAppState createState() => _NewsAppState();
 }
 
-class _HeroListScreenState extends State<HeroListScreen> {
-  late Future<List<HeroData>> futureHeroData;
+class NewsDetailScreen extends StatelessWidget {
+  final dynamic article;
 
-  @override
-  void initState() {
-    super.initState();
-    futureHeroData = fetchHeroData();
-  }
-
-  Future<List<HeroData>> fetchHeroData() async {
-    final response = await http.get(
-        Uri.parse('https://indonesia-public-static-api.vercel.app/api/heroes'));
-
-    if (response.statusCode == 200) {
-      List<dynamic> responseData = jsonDecode(response.body);
-      List<HeroData> heroDataList = [];
-
-      for (var item in responseData) {
-        HeroData heroData = HeroData.fromJson(item);
-        heroDataList.add(heroData);
-      }
-
-      return heroDataList;
-    } else {
-      throw Exception('Failed to fetch data');
-    }
-  }
+  const NewsDetailScreen({required this.article});
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(
-          'Biodata Pahlawan',
-          style: TextStyle(color: Colors.yellow[800],
-            ),
-        ),
-        backgroundColor: Colors.black,
+        title: Text('News Detail'),
       ),
-      body: Center(
-        child: FutureBuilder<List<HeroData>>(
-          future: futureHeroData,
-          builder: (context, snapshot) {
-            if (snapshot.hasData) {
-              List<HeroData>? heroDataList = snapshot.data;
+      body: SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              if (article['urlToImage'] != null)
+                Image.network(
+                  article['urlToImage'],
+                  width: MediaQuery.of(context).size.width,
+                  height: 200,
+                  fit: BoxFit.cover,
+                ),
+              SizedBox(height: 16),
+              Text(
+                article['title'],
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              SizedBox(height: 8),
+              Text(
+                article['description'] != null
+                    ? article['description']
+                    : 'No description available',
+                style: TextStyle(fontSize: 16),
+              ),
+              SizedBox(height: 8),
+              Text(
+                'Published At: ${article['publishedAt']}',
+                style: TextStyle(fontSize: 14, color: Colors.grey),
+              ),
+              SizedBox(height: 8),
+              Text(
+                'Source: ${article['source']['name']}',
+                style: TextStyle(fontSize: 14, color: Colors.grey),
+              ),
+              SizedBox(height: 8),
+              Text(
+                'Read More: ${article['url']}',
+                style: TextStyle(
+                  fontSize: 14,
+                  color: Colors.blue,
+                  decoration: TextDecoration.underline,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
 
-              return ListView.builder(
-                itemCount: heroDataList!.length,
-                itemBuilder: (context, index) {
-                  HeroData heroData = heroDataList[index];
+class _NewsAppState extends State<NewsApp> {
+  List<dynamic> articles = [];
 
-                  return ListTile(
-                    title: Text(heroData.name),
-                    subtitle: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text('Birth Year: ${heroData.birthYear}'),
-                        Text('Death Year: ${heroData.deathYear}'),
-                        Text('Description: ${heroData.description}'),
-                      ],
+  Future<void> fetchNews() async {
+    String url =
+        'https://newsapi.org/v2/top-headlines?country=id&apiKey="APIKEY ANDA"';
+    var response = await http.get(Uri.parse(url));
+
+    if (response.statusCode == 200) {
+      var jsonData = json.decode(response.body);
+      setState(() {
+        articles = jsonData['articles'];
+      });
+    } else {
+      print('Error fetching news.');
+    }
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    fetchNews();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      title: 'News App',
+      home: Scaffold(
+        appBar: AppBar(
+          title: Text('News App'),
+        ),
+        body: ListView.builder(
+          itemCount: articles.length,
+          itemBuilder: (BuildContext context, int index) {
+            return Card(
+              child: ListTile(
+                leading: articles[index]['urlToImage'] != null
+                    ? Image.network(
+                        articles[index]['urlToImage'],
+                        width: 100,
+                        height: 100,
+                        fit: BoxFit.cover,
+                      )
+                    : SizedBox.shrink(),
+                title: Text(articles[index]['title']),
+                subtitle: Text(articles[index]['description'] ??
+                    'No description available'),
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => NewsDetailScreen(
+                        article: articles[index],
+                      ),
                     ),
                   );
                 },
-              );
-            } else if (snapshot.hasError) {
-              return Text('Error: ${snapshot.error}');
-            }
-
-            return CircularProgressIndicator();
+              ),
+            );
           },
         ),
       ),
     );
   }
 }
-
-void main() {
-  runApp(MaterialApp(
-    home: HeroListScreen(),
-  ));
-}
-
 ```
 
 - Kemudian, tambahkan `APIKEY` kalian dalam url.
